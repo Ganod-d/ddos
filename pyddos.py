@@ -367,7 +367,8 @@ def main():
     parser.add_argument('-s', '--sleep', dest='s', help='Sleep time between requests (default: 0)', default=0, type=int)
     parser.add_argument('-m', '--method', dest='m', help='Attack method (default: syn)', choices=['pyslow', 'requester', 'syn', 'vsechno'], default='syn')
     parser.add_argument('-P', '--proxy-file', dest='P', help='File containing proxy list')
-
+    args = parser.parse_args()
+    synflood(args.d, args.p, args.T, args.s, args.P)
     args = parser.parse_args()
 
     # Call the function responsible for flooding
