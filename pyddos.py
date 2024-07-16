@@ -23,13 +23,17 @@ def read_user_agents_file(filename):
 
 # Chọn ngẫu nhiên một proxy và một user agent
 def get_random_proxy(proxies):
-    return random.choice(proxies)
+    proxy = random.choice(proxies)
+    # Kiểm tra nếu proxy đã có http:// hoặc https://, nếu không thì thêm vào
+    if not proxy.startswith('http://') and not proxy.startswith('https://'):
+        proxy = f'http://{proxy}'
+    return proxy
 
 def get_random_user_agent(user_agents):
     return random.choice(user_agents)
 
 # URL mẫu để thử nghiệm
-url = 'http://4gchill.com'
+url = 'https://4gchill.com'
 
 # Đọc dữ liệu từ các file
 proxy_file = 'proxy.txt'
