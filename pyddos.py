@@ -27,7 +27,7 @@ from socket import *
 from threading import Thread, Lock
 from struct import pack
 from argparse import ArgumentParser, RawTextHelpFormatter
-from module_name import synflood
+from synflood import synflood
 
 
 if os.name == 'posix':
