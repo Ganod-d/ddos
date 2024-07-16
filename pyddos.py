@@ -1,7 +1,7 @@
 import requests
 
 # URL mẫu để thử nghiệm
-url = 'https://httpbin.org/user-agent'
+url = 'https://4gchill.com'
 
 # Proxy và User Agent cụ thể
 proxy = '103.41.32.182:58080'
