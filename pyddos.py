@@ -29,7 +29,7 @@ def get_random_user_agent(user_agents):
     return random.choice(user_agents)
 
 # URL mẫu để thử nghiệm
-url = 'https:/4gchill.com'
+url = 'https://4gchill.com'
 
 # Đọc dữ liệu từ các file
 proxy_file = 'proxy.txt'
